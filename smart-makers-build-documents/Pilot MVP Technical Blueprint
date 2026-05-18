@@ -1,0 +1,598 @@
+Smart Makers Operations System
+Pilot MVP Technical Blueprint
+
+1. מטרת המסמך
+המסמך הזה מגדיר את ה־Pilot MVP Technical Blueprint עבור מערכת:
+Smart Makers Operations System
+זוהי מערכת בקרה תפעולית למנהל אזור.
+המטרה שלה היא:
+למנוע נפילת מידע בין הכיסאות
+להוריד עומס קוגניטיבי ממנהל
+לרכז את כל המידע התפעולי במקום אחד
+להציג למנהל בזמן אמת איפה הפוקוס שלו צריך להיות
+
+2. פילוסופיית ה־MVP
+המערכת היא:
+Manager-Centric Operational System
+ב־MVP:
+המדריכים לא משתמשים במערכת
+המנהל הוא מקור המידע היחיד
+המערכת לא מנסה להיות ERP
+המערכת לא מנסה להיות CRM
+המערכת לא מנסה להיות מערכת מלאי מלאה
+המטרה היא:
+Operational Attention Management
+
+3. Core Operational Flow
+המערכת בנויה סביב:
+קבוצות
+שיעורים
+סיכומי שיעור
+חוסרים
+משימות טיפול
+הישות המרכזית במערכת היא:
+Lesson
+כל שאר הישויות נגזרות ממנה.
+
+4. Core Entities
+4.1 Schools
+שדות:
+id
+name
+city
+address
+notes
+
+4.2 Groups
+שדות:
+id
+school_id
+name
+fixed_day
+fixed_hour
+start_date
+end_date
+yearly_sessions_count
+default_instructor_id
+students_count
+syllabus_name
+status
+
+4.3 Lessons
+שדות:
+id
+group_id
+school_id
+lesson_date
+start_time
+end_time
+Planned
+planned_model
+planned_lesson_number
+planned_stage_number
+Actual
+actual_instructor_id
+actual_model
+actual_lesson_number
+actual_stage_number
+Attendance
+attendance_received
+attendance_count
+Summary
+summary_received
+student_notes
+alignment_status
+alignment_notes
+Status
+lesson_status
+closed_with_exception
+exception_reason
+Metadata
+manager_notes
+cancelled_reason
+
+4.4 Instructors
+שדות:
+id
+full_name
+phone
+lesson_rate
+notes
+
+4.5 Models
+שדות:
+id
+model_name
+expected_lessons_count
+total_stages
+material_notes
+
+4.6 Shortages
+שדות:
+id
+related_group_id
+related_school_id
+related_lesson_id
+related_instructor_id
+shortage_type
+shortage_description
+due_date
+status
+notes
+
+4.7 Operational Tasks
+שדות:
+id
+title
+related_group_id
+related_school_id
+related_lesson_id
+related_instructor_id
+task_type
+due_date
+status
+notes
+
+5. Lesson Status Logic
+Scheduled
+השיעור עדיין לא התחיל.
+Awaiting Attendance
+עברו 5 דקות מתחילת השיעור ואין נוכחות.
+Awaiting Summary
+השיעור הסתיים ואין סיכום.
+Completed
+השיעור נסגר בצורה תקינה.
+Completed With Exception
+השיעור נסגר עם מידע חסר.
+Cancelled
+השיעור בוטל.
+
+6. Lesson Closure Rules
+שיעור יכול להיסגר רגיל רק אם:
+attendance_received = true
+attendance_count קיים
+summary_received = true
+actual_model קיים
+actual_lesson_number קיים
+actual_stage_number קיים
+
+7. Override Policy
+אם חסר מידע:
+המנהל יכול לבחור:
+Close With Exception
+חובה להזין:
+exception_reason
+השיעור:
+נסגר
+נספר לשכר
+יוצא מה־Attention Queue
+אבל:
+מופיע Exception Flag
+
+8. Planned vs Actual Logic
+לכל שיעור יש:
+Planned
+מה שתוכנן מראש.
+Actual
+מה שקרה בפועל.
+המערכת לא מזיזה אוטומטית את הסילבוס.
+המנהל שולט ידנית בשינויים.
+
+9. Group Creation Flow
+Step 1 — Create Group
+המנהל מזין:
+בית ספר
+עיר
+שם קבוצה
+יום קבוע
+שעה
+תאריך התחלה
+תאריך סיום
+מספר מפגשים
+מדריך קבוע
+מספר תלמידים
+
+Step 2 — Auto Create Lesson Skeletons
+המערכת יוצרת:
+lesson_date
+start_time
+group_id
+lesson_status = Scheduled
+
+Step 3 — Syllabus Planning
+המנהל מזין לכל מפגש:
+planned_model
+planned_lesson_number
+planned_stage_number
+
+10. Cancellation Logic
+ב־MVP:
+אין הזזה אוטומטית של סדרת שיעורים.
+כאשר שיעור מבוטל:
+lesson_status = Cancelled
+חובה להזין cancelled_reason
+המערכת יוצרת:
+Operational Task
+“בדוק אם צריך לעדכן את המשך הסילבוס / הלוז של הקבוצה.”
+
+11. Materials Logic
+ב־MVP:
+אין inventory system אמיתי.
+
+School Materials
+שומרים:
+model_name
+quantity_estimate
+notes
+
+Instructor Kit
+Checklist / Free Text בלבד:
+glue
+spray
+screwdrivers
+tools
+etc
+
+12. Attention Queue Logic
+ה־Attention Queue מציג:
+Missing Attendance
+Missing Summary
+Open Lessons
+Open Shortages
+Open Operational Tasks
+Exception Flags
+
+13. Today Dashboard Structure
+Section A — Today Timeline
+מציג:
+Upcoming Lessons
+Active Lessons
+Completed Lessons
+כולל:
+שעה
+בית ספר
+קבוצה
+מדריך
+סטטוס
+נוכחות
+סיכום
+
+Section B — Attention Queue
+מציג:
+חסרות נוכחות
+חסרים סיכומים
+שיעורים פתוחים
+חוסרים
+משימות
+חריגות
+
+14. Lesson Page Structure
+Area 1 — Lesson Details
+date
+time
+school
+instructor
+planned model
+
+Area 2 — Attendance
+attendance received
+attendance count
+
+Area 3 — Summary
+student notes
+actual model
+lesson number
+stage number
+alignment status
+
+Area 4 — Shortages
+shortage type
+description
+due date
+
+Area 5 — Actions
+Save
+Close Lesson
+Close With Exception
+Cancel Lesson
+Replace Instructor
+Copy WhatsApp Templates
+
+15. WhatsApp Templates
+המערכת לא שולחת הודעות.
+היא רק מייצרת:
+Attendance Request Template
+Lesson Summary Template
+עם:
+school
+city
+group
+contextual lesson info
+
+16. Payroll Logic
+Payroll MVP =
+Completed Lessons Count × Instructor Lesson Rate
+מחושב לפי:
+actual_instructor בלבד.
+
+17. Conflict Detection
+אין Conflict Resolution Engine.
+יש רק:
+Soft Warnings
+לדוגמה:
+למדריך כבר יש שיעור בזמן הזה
+לבית הספר כבר יש קבוצה בזמן הזה
+
+18. Recommended Tech Stack
+Frontend
+Next.js
+Backend / Database
+Supabase
+AI Coding
+Claude + Cursor
+
+19. Recommended Build Order
+Phase 0
+Schema + Auth + Seed Data
+Phase 1
+Lesson Page
+Phase 2
+Today Dashboard
+Phase 3
+Groups + Schools
+Phase 4
+Shortages + Tasks
+Phase 5
+Instructor Page
+Phase 6
+Pilot Testing
+
+20. MVP Success Definition
+המערכת הצליחה אם:
+המנהל מרגיש שהוא לא מפספס שום דבר חשוב,
+ויודע בכל רגע איפה הפוקוס שלו צריך להיות.
+
+Smart Makers Operations System
+MVP Technical Blueprint v1.1
+Operational Tightening Addendum
+
+1. Operational Philosophy
+The system is built around:
+Management By Exception
+The manager should not need to manually monitor everything constantly.
+The system exists to surface:
+operational deviations
+missing reports
+unresolved shortages
+incomplete lesson closures
+upcoming operational risks
+group progression issues
+scheduling concerns
+If everything is operating correctly:
+ the system should feel quiet.
+The dashboard should emphasize:
+attention, not data overload.
+
+2. Unified Operational Flag System
+The MVP should internally treat operational problems as:
+Flags
+Flags are the core operational control mechanism of the system.
+Flags may appear:
+in the Attention Queue
+on Lesson Pages
+on Group Pages
+on Dashboard cards
+
+Initial MVP Flags
+Lesson Flags
+Missing Attendance
+Missing Summary
+Lesson Closed With Exception
+Instructor Replaced
+Cancelled Lesson Requires Follow-Up
+
+Group Flags
+Group Off Planned Progress
+Missing Planned Model
+Group Requires Syllabus Review
+
+Materials Flags
+Open Shortage
+Upcoming Material Risk
+
+Operational Flags
+Open Operational Task
+Upcoming Scheduling Risk
+
+3. Minimal Audit Requirements
+The MVP does NOT require enterprise audit logging.
+However:
+ basic operational traceability is required.
+
+Required Audit Fields
+All operational entities should include:
+created_at
+updated_at
+updated_by
+
+Lesson-Specific Audit Fields
+Lessons should additionally include:
+closed_at
+closed_by
+exception_closed_at
+exception_reason
+
+Important Principle
+The system should preserve:
+operational accountability
+basic debugging capability
+historical visibility
+without introducing heavy audit infrastructure.
+
+4. Group Alignment Visibility
+One of the core operational loops is:
+Group Alignment
+The system must allow the manager to identify:
+groups progressing slower than planned
+groups progressing differently than planned
+groups with inconsistent stage progression
+
+MVP Requirement
+The system should compare:
+Planned
+vs.
+Actual
+for:
+model
+lesson number
+stage number
+
+Visibility Rule
+The system does NOT automatically correct syllabus progression.
+The system only:
+surfaces deviations
+allows the manager to intervene manually
+
+Suggested Dashboard Section
+Groups Requiring Alignment Review
+Examples:
+Actual model differs from planned model
+Actual stage significantly behind planned stage
+Group repeatedly deviates from syllabus
+
+5. Upcoming Operational Risk Visibility
+The system should not only react to problems after they happen.
+The MVP should also surface:
+Upcoming Operational Risks
+
+Examples
+Upcoming lesson with open shortage
+Upcoming lesson with missing planned model
+Upcoming lesson without assigned instructor
+Upcoming lesson following unresolved cancellation
+Upcoming lesson with unresolved exception flag
+
+Important Constraint
+This is NOT predictive AI.
+This is simple operational visibility.
+
+6. Mobile-First Operational Constraint
+The MVP is intended primarily for:
+managers in the field
+mobile usage
+fast operational interaction
+
+Required Mobile Capabilities
+The manager must comfortably be able to:
+open dashboard
+open lesson
+mark attendance received
+close lesson
+close lesson with exception
+create shortage
+create operational task
+copy WhatsApp templates
+from a phone browser.
+
+UX Principle
+The system should prioritize:
+fast taps
+low cognitive load
+large interaction targets
+checklist-style workflows
+over:
+dense tables
+desktop-heavy interfaces
+
+7. Source of Truth Definition
+For the MVP:
+Manager Input Inside The System Is The Operational Source Of Truth
+
+Clarifications
+WhatsApp conversations are not authoritative records
+External spreadsheets are not authoritative records
+PlanDo is external operational context only
+The dashboard reflects the system state only
+
+Operational Principle
+If information exists only in WhatsApp,
+ it is considered:
+not operationally secured.
+
+8. Instructor Lesson Summary (Not Payroll)
+The MVP does NOT contain a true payroll system.
+The payroll-related screen should internally be treated as:
+Instructor Lesson Summary
+Purpose:
+operational verification
+lesson count validation
+estimated payout visibility
+
+The MVP Does NOT Include
+invoices
+payroll exports
+travel calculations
+bonuses
+tax calculations
+payslips
+
+9. Pilot Constraints
+The MVP is intentionally constrained.
+
+Initial Pilot Assumptions
+1 Admin
+1 Manager
+low operational volume
+no instructor login
+no mobile app
+no offline support
+no external integrations
+no advanced inventory system
+no advanced scheduling engine
+no automation-heavy workflows
+no AI prediction systems
+
+Important Principle
+Complexity should only be added:
+ after operational validation.
+
+10. Pilot Success Metrics
+The pilot succeeds if:
+the manager checks the dashboard daily
+lessons stop falling through the cracks
+missing attendance becomes consistently visible
+missing summaries are reduced
+shortages become visible before lessons
+operational follow-up becomes centralized
+WhatsApp follow-up becomes standardized
+group progression becomes operationally visible
+the manager feels reduced operational stress
+
+11. MVP Architectural Philosophy
+The MVP should prioritize:
+operational clarity
+simplicity
+speed of implementation
+workflow stability
+low training overhead
+over:
+elegance
+automation
+enterprise scalability
+advanced optimization
+
+12. Future Expansion Philosophy
+The MVP should preserve the ability to later add:
+instructor-facing workflows
+inventory systems
+automated messaging
+advanced scheduling
+franchise management
+analytics
+integrations
+However:
+Future scalability must not increase MVP complexity unnecessarily.
+The MVP must remain:
+aggressively operational-first.
+
+
